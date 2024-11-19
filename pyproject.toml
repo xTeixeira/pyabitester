@@ -8,6 +8,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 requests = "^2.32.3"
+click = "^8.1.7"
+keyring = "^25.5.0"
+secretstorage = "^3.3.3"
+dbus-python = "^1.3.2"
+
+[tool.poetry.scripts]
+pyabitester = "pyabitester.pyabitester:cli"
 
 [build-system]
 requires = ["poetry-core"]
