@@ -9,10 +9,35 @@ import click
 from urllib.parse import urlparse
 import keyring
 import os
+import rpm
+import stat
 
 latest_sle = "SUSE:SLE-15-SP7:GA"
 obs_url = "https://api.opensuse.org"
 ibs_url = "https://api.suse.de"
+
+def unpack_rpm(h, fd, prefix):
+    files = rpm.files(h)
+    payload = rpm.fd(fd, 'r', h['payloadcompressor'])
+    archive = files.archive(payload)
+    for f in archive:
+        os.makedirs(f'{prefix}/{f.dirname}', exist_ok=True)
+        fn = f'{prefix}/{f.name}'
+        if stat.S_ISREG(f.mode):
+            if archive.hascontent():
+                wfd = rpm.fd(fn, 'w')
+                archive.readto(wfd)
+                wfd.close()
+                # handle hardlinks
+                if f.nlink > 1:
+                    for l in f.links:
+                        if l.name != f.name:
+                            ln = f'{prefix}/{l.name}'
+                            os.link(fn, ln)
+        elif stat.S_ISDIR(f.mode):
+            os.makedirs(fn, exist_ok=True)
+        elif stat.S_ISLNK(f.mode):
+            os.symlink(f.linkto, fn)
 
 def get_canon_project(api, project_name, package_name):
     # Get linked SUSE:Maintenance projects from SLE codestream
@@ -94,6 +119,17 @@ def cli(obs_user, obs_pass, ssh_key, package_name, arch):
         for rpm_file in obs_binaries:
             with open(f'{factory_download_path}/{rpm_file["file_name"]}', 'wb') as file:
                 file.write(rpm_file["file_content"])
+
+    for file in [file for file in os.listdir(sle_download_path) if os.path.isfile(os.path.join(f"{sle_download_path}/", file))]:
+        ts = rpm.TransactionSet()
+        os.makedirs(f"./sle/{package_name}/contents", exist_ok=True)
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
+
+        fd = os.open(f"sle/{package_name}/{file}", os.O_RDONLY)
+        hdr = ts.hdrFromFdno(fd)
+
+        unpack_rpm(hdr, fd, f"./sle/{package_name}/contents")
+        os.close(fd)
 
 
 if __name__ == '__main__':

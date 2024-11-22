@@ -501,6 +501,20 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "rpm"
+version = "0.3.1"
+description = "Shim RPM module for use in virtualenvs."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "rpm-0.3.1-py3-none-any.whl", hash = "sha256:6a130be8b953781bdbe652927dd9c50d2160f26344ec6e3c0defe823aeda1789"},
+    {file = "rpm-0.3.1.tar.gz", hash = "sha256:d75c5dcb581f1e9c4f89cb6667e938e944c6e7c17dd96829e1553c39f3a4c961"},
+]
+
+[package.extras]
+testing = ["tox"]
+
+[[package]]
 name = "secretstorage"
 version = "3.3.3"
 description = "Python bindings to FreeDesktop.org Secret Service API"
@@ -554,4 +568,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3c2e3c59ffb8bfd4e717d1cef2f132dc3c4434dfaf62373dabd7d665bf596f58"
+content-hash = "39a973dd94fd4b1f4b9da5aed298789925a1e40b6ceb1e00e7154ea8b5c8a931"
