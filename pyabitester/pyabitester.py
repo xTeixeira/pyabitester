@@ -13,16 +13,21 @@ latest_sle = "SUSE:SLE-15-SP7:GA"
 obs_url = "https://api.opensuse.org"
 ibs_url = "https://api.suse.de"
 
-def get_repo(api, project, package_name):
+def get_canon_project(api, project_name, package_name):
     # Get linked SUSE:Maintenance projects from SLE codestream
-    pkglist = [pkg for pkg in api.showlinked(project, package_name) if "SUSE:Maintenance" in pkg["project"]]
+    pkglist = [pkg for pkg in api.showlinked(project_name, package_name) if "SUSE:Maintenance" in pkg["project"]]
     # Get latest SUSE:Maintenance project
-    pkglist.sort(reverse=True, key=lambda pkg : pkg["project"])
-    if len(pkglist) > 0 : return pkglist[0]["project"]
-    # If there is no SUSE:Maintenance project linked, it means the latest version is from a GA release.
-    # So we look for the canon project in the package's meta
-    package_meta = api.meta_pkg(project, package_name)
-    if package_meta: return package_meta["project"]
+    if len(pkglist) > 0:
+        pkglist.sort(reverse=True, key=lambda pkg : pkg["project"])
+        return pkglist[0]["project"], pkglist[0]["name"]
+
+    # In the case of SLE projects, If there is no SUSE:Maintenance project linked, it means the latest version is from a GA release.
+    # So we look for the canon project in the package's meta, which will also work for Factory or other OBS projects.
+    package_meta = api.meta_pkg(project_name, package_name)
+    if package_meta:
+        return package_meta["project"], package_meta["name"]
+
+    raise RuntimeError('could not find suitable project to download rpm packages from')
 
 @click.command()
 @click.option('--obs-user', prompt=f'User name for {obs_url}', help='OBS user name')
