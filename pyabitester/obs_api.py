@@ -24,12 +24,9 @@ class ObsApi():
         '''
         binary_list_url = f"/build/{project_name}/{repository_name}/{architecture_name}/{package_name}"
         response = self.session.get(self.url + binary_list_url, verify=False, auth=self.auth)
-        print(binary_list_url)
-        print (response.text)
         binary_filename_list = []
         binarylist = ET.fromstring(response.text)
         for binary in binarylist:
-            print(binary.attrib)
             binary_filename_list.append(binary.attrib["filename"])
         return binary_filename_list
 
