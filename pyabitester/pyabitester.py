@@ -8,6 +8,7 @@ import argparse
 import click
 from urllib.parse import urlparse
 import keyring
+import os
 
 latest_sle = "SUSE:SLE-15-SP7:GA"
 obs_url = "https://api.opensuse.org"
@@ -62,7 +63,6 @@ def get_binaries(api, project_name, package_name, architecture_name):
 @click.password_option("--obs-pass", prompt='Password for OBS user',  confirmation_prompt=True, prompt_required=False, help='OBS password')
 @click.argument('package-name')
 def cli(obs_user, obs_pass, ssh_key, package_name, arch):
-    ibs_api = ObsApi(ibs_url, SignatureAuth(obs_user, ssh_key))
 
     if not obs_pass:
         obs_pass = keyring.get_password(urlparse(obs_url).netloc, obs_user)
@@ -74,9 +74,27 @@ def cli(obs_user, obs_pass, ssh_key, package_name, arch):
                 print("Failed to store password in keyring")
                 exit(1)
 
-    obs_api = ObsApi(obs_url, auth=requests.auth.HTTPBasicAuth(obs_user, obs_pass))
-    print(get_repo(obs_api, "openSUSE:Factory", package_name))
-    print(get_repo(ibs_api, latest_sle, package_name))
+    sle_download_path = f"sle/{package_name}"
+    factory_download_path = f"factory/{package_name}"
+
+    if not os.path.exists(sle_download_path):
+        ibs_api = ObsApi(ibs_url, SignatureAuth(obs_user, ssh_key))
+        ibs_binaries = get_binaries(ibs_api, latest_sle, package_name, arch)
+        os.makedirs(sle_download_path)
+
+        for rpm_file in ibs_binaries:
+            with open(f'{sle_download_path}/{rpm_file["file_name"]}', 'wb') as file:
+                file.write(rpm_file["file_content"])
+
+    if not os.path.exists(factory_download_path):
+        obs_api = ObsApi(obs_url, auth=requests.auth.HTTPBasicAuth(obs_user, obs_pass))
+        obs_binaries = get_binaries(obs_api, "openSUSE:Factory", package_name, arch)
+        os.makedirs(factory_download_path, exist_ok=True)
+
+        for rpm_file in obs_binaries:
+            with open(f'{factory_download_path}/{rpm_file["file_name"]}', 'wb') as file:
+                file.write(rpm_file["file_content"])
+
 
 if __name__ == '__main__':
     cli()
