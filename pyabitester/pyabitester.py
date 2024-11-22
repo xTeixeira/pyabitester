@@ -29,6 +29,32 @@ def get_canon_project(api, project_name, package_name):
 
     raise RuntimeError('could not find suitable project to download rpm packages from')
 
+def get_repository(api, canon_project_name):
+    repo_list = api.repo_list(canon_project_name)
+    # Try to guess the correct repo. For maintenance projects for now we simply pick one with "SUSE_SLE" in the name.
+    # For everything else it's usually "standard"
+    # No option is provided for the user to choose the repo manually, although maybe they should be prompted if no suitable repo is found.
+    for repo in repo_list:
+        if "SUSE_SLE" in repo:
+            return repo
+    return "standard"
+
+def get_binaries(api, project_name, package_name, architecture_name):
+    binaries = []
+    canon_project_name, canon_package_name = get_canon_project(api, project_name, package_name)
+    repository_name = get_repository(api, canon_project_name)
+    for binary_filename in api.binary_list(canon_project_name, repository_name, architecture_name, canon_package_name):
+        # Only download packages for the desired arch
+        if f"{architecture_name}.rpm" not in binary_filename:
+            continue
+
+        binary_content = api.get_binary(canon_project_name, repository_name, architecture_name, canon_package_name, binary_filename)
+
+        if binary_content:
+            binaries.append({"file_name" : binary_filename, "file_content" : binary_content})
+
+    return binaries
+
 @click.command()
 @click.option('--obs-user', prompt=f'User name for {obs_url}', help='OBS user name')
 @click.option('--ssh-key', prompt='Path to ssh key file', help='SSH key file path')
