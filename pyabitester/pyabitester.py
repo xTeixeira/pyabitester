@@ -25,11 +25,12 @@ def get_repo(api, project, package_name):
     if package_meta: return package_meta["project"]
 
 @click.command()
-@click.option('--obs-user', prompt='User name for {}'.format(obs_url), help='OBS user name')
-@click.password_option("--obs-pass", prompt='Password for OBS user',  confirmation_prompt=True, prompt_required=False)
+@click.option('--obs-user', prompt=f'User name for {obs_url}', help='OBS user name')
 @click.option('--ssh-key', prompt='Path to ssh key file', help='SSH key file path')
+@click.option('--arch', default="x86_64")
+@click.password_option("--obs-pass", prompt='Password for OBS user',  confirmation_prompt=True, prompt_required=False, help='OBS password')
 @click.argument('package-name')
-def cli(obs_user, obs_pass, ssh_key, package_name):
+def cli(obs_user, obs_pass, ssh_key, package_name, arch):
     ibs_api = ObsApi(ibs_url, SignatureAuth(obs_user, ssh_key))
 
     if not obs_pass:
