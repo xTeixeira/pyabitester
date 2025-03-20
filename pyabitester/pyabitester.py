@@ -131,6 +131,18 @@ def cli(obs_user, obs_pass, ssh_key, package_name, arch):
         unpack_rpm(hdr, fd, f"./sle/{package_name}/contents")
         os.close(fd)
 
+    for file in [file for file in os.listdir(factory_download_path) if os.path.isfile(os.path.join(f"{factory_download_path}/", file))]:
+        ts = rpm.TransactionSet()
+        os.makedirs(f"./factory/{package_name}/contents", exist_ok=True)
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
+
+        fd = os.open(f"factory/{package_name}/{file}", os.O_RDONLY)
+        hdr = ts.hdrFromFdno(fd)
+
+        unpack_rpm(hdr, fd, f"./factory/{package_name}/contents")
+        os.close(fd)
+
+
 
 if __name__ == '__main__':
     cli()
